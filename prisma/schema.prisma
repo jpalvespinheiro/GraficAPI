@@ -14,3 +14,4 @@ model ChartData {
   label     String
   createdAt DateTime @default(now())
 }
+
