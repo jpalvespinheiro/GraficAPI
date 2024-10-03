@@ -1,9 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { ChartType, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getChartDataService = async (tipo: string, dataInicio: string, dataFim: string) => {
+interface ChartData {
+  label: string;
+  value: number;
+}
 
+export const getChartDataService = async (tipo: string, dataInicio: string, dataFim: string) => {
   if (!isValidDate(dataInicio) || !isValidDate(dataFim)) {
     throw new Error('Datas de início e fim inválidas');
   }
@@ -17,7 +21,7 @@ export const getChartDataService = async (tipo: string, dataInicio: string, data
 
   const chartData = await prisma.chartData.findMany({
     where: {
-      type: tipo,
+      type: tipo as ChartType,
       createdAt: {
         gte: inicio,
         lte: fim,
@@ -29,15 +33,14 @@ export const getChartDataService = async (tipo: string, dataInicio: string, data
     },
   });
 
-  // Organizando a resposta com base em qual gráfico escolher
   switch (tipo) {
-    case 'pie':
+    case 'PIE':
       return chartData;
 
-    case 'line':
+    case 'LINE':
       return formatLineChartData(chartData);
 
-    case 'bar':
+    case 'BAR':
       return formatBarChartData(chartData);
 
     default:
@@ -45,13 +48,14 @@ export const getChartDataService = async (tipo: string, dataInicio: string, data
   }
 };
 
+
 const isValidDate = (dateString: string): boolean => {
   const date = new Date(dateString);
   return !isNaN(date.getTime());
 };
 
-// Formatação dos dados para gráfico de linhas
-const formatLineChartData = (data: any[]) => {
+
+const formatLineChartData = (data: ChartData[]) => {
   return {
     labels: data.map((item) => item.label),
     datasets: [
@@ -63,8 +67,7 @@ const formatLineChartData = (data: any[]) => {
   };
 };
 
-// Formatação dos dados para gráfico de barras
-const formatBarChartData = (data: any[]) => {
+const formatBarChartData = (data: ChartData[]) => {
   return {
     labels: data.map((item) => item.label),
     datasets: [
@@ -74,4 +77,61 @@ const formatBarChartData = (data: any[]) => {
       },
     ],
   };
+};
+
+
+
+const getTotalService = async (tipo: string, dataInicio: string, dataFim: string) => {
+  return await prisma.chartData.aggregate({
+    _sum: {
+      value: true,
+    },
+    where: {
+      type: tipo as ChartType,
+      createdAt: {
+        gte: new Date(dataInicio),
+        lte: new Date(dataFim),
+      },
+    },
+  });
+};
+
+export const getTotalReceitasService = async (dataInicio: string, dataFim: string) => {
+  const totalReceitas = await getTotalService('RECEITA', dataInicio, dataFim);
+  return totalReceitas._sum?.value || 0;
+};
+
+export const getTotalDespesasService = async (dataInicio: string, dataFim: string) => {
+  const totalDespesas = await getTotalService('DESPESA', dataInicio, dataFim);
+  return totalDespesas._sum?.value || 0; 
+};
+
+export const getLucroLiquidoService = async (dataInicio: string, dataFim: string) => {
+  const totalReceitas = await getTotalReceitasService(dataInicio, dataFim);
+  const totalDespesas = await getTotalDespesasService(dataInicio, dataFim);
+  return totalReceitas - totalDespesas;
+};
+
+export const getContasVencidasService = async () => {
+  const today = new Date();
+  const contasVencidas = await prisma.conta.findMany({
+    where: {
+      vencimento: {
+        lt: today,
+      },
+    },
+  });
+  return contasVencidas;
+};
+
+export const getContasAVencerService = async () => {
+  const today = new Date();
+  const contasAVencer = await prisma.conta.findMany({
+    where: {
+      vencimento: {
+        gte: today,
+      },
+    },
+  });
+  return contasAVencer;
 };

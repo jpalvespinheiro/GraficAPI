@@ -7,11 +7,43 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum TipoConta {
+  PAGAR
+  RECEBER
+}
+
+enum ChartType {
+  PIE
+  LINE
+  BAR
+  RECEITA
+  DESPESA
+}
+
+
+model User {  
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  contas  Conta[]
+}
+
+model Conta {
+  id         Int      @id @default(autoincrement())
+  descricao  String
+  vencimento DateTime
+  valor      Float
+  tipo       TipoConta
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([vencimento])
+}
+
+
 model ChartData {
   id        Int      @id @default(autoincrement())
-  type      String
+  type      ChartType
   value     Float
   label     String
   createdAt DateTime @default(now())
 }
-

@@ -6,7 +6,6 @@ jest.mock('../services/chartService');
 
 describe('GET /api/charts', () => {
   it('deve retornar dados para gráfico de pizza', async () => {
-
     (getChartDataService as jest.Mock).mockResolvedValue([
       { label: 'A', value: 10 },
       { label: 'B', value: 20 },
@@ -14,7 +13,7 @@ describe('GET /api/charts', () => {
 
     const response = await request(app)
       .get('/api/charts')
-      .query({ type: 'pie', startDate: '2023-01-01', endDate: '2023-12-31' });
+      .query({ tipo: 'PIE', dataInicio: '2023-01-01', dataFim: '2023-12-31' });
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(2);
@@ -25,21 +24,20 @@ describe('GET /api/charts', () => {
   it('deve retornar erro se parâmetros estiverem faltando', async () => {
     const response = await request(app)
       .get('/api/charts')
-      .query({ type: 'pie' });
+      .query({ tipo: 'PIE' }); 
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe('Parâmetros ausentes');
+    expect(response.body.error).toBe('Parâmetros "tipo", "dataInicio" e "dataFim" são obrigatórios.');
   });
 
   it('deve retornar erro 500 se ocorrer um erro no serviço', async () => {
-    
     (getChartDataService as jest.Mock).mockRejectedValue(new Error('Erro simulado'));
 
     const response = await request(app)
       .get('/api/charts')
-      .query({ type: 'pie', startDate: '2023-01-01', endDate: '2023-12-31' });
+      .query({ tipo: 'PIE', dataInicio: '2023-01-01', dataFim: '2023-12-31' });
 
     expect(response.status).toBe(500);
-    expect(response.body.message).toBe('Erro ao buscar dados');
+    expect(response.body.error).toBe('Erro ao buscar dados do gráfico.');
   });
 });
