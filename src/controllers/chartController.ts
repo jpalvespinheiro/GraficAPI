@@ -24,14 +24,7 @@ export const getChartData = async (req: Request, res: Response) => {
     }
 
     const chartData = await getChartDataService(tipo as string, dataInicio as string, dataFim as string);
-    
-    const destinatario = req.query.email || 'default@example.com';
-
-    await sendEmail(
-      destinatario as string,
-      'Dados do Gráfico',
-      JSON.stringify(chartData)
-    );
+  
 
     return res.json(chartData);
   } catch (error) {
